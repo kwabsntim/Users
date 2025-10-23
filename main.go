@@ -301,6 +301,8 @@ func fetchAllEmails(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error fetching emails", http.StatusInternalServerError)
 	}
 	defer results.Close(ctx)
+	w.Header().Set("content-type", "application/json")
+	json.NewEncoder(w).Encode(emails)
 }
 
 // --------------DELETE USER ------------------
@@ -410,6 +412,7 @@ func main() {
 	mux.HandleFunc("/api/users", fetchAllUsers)
 	mux.HandleFunc("/api/delete-user", deleteUser)
 	mux.HandleFunc("/api/update-Status", updateStatus)
+	mux.HandleFunc("/api/emails", fetchAllEmails)
 	//Wrapping the mux around the panic middleware
 	handlerforPanicRecovery := panicMiddleware(logger)(mux)
 	server := &http.Server{
