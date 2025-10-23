@@ -51,6 +51,8 @@ func panicMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
 		})
 	}
 }
+//method checking middleware 
+func 
 
 // ------------------ GLOBAL VARIABLES ------------------
 
@@ -89,8 +91,8 @@ func connectDB() *mongo.Client {
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatal("MongoDB ping error:", err)
 	}
-
-	fmt.Println(" Connected to MongoDB successfully!")
+	
+	logger.Info(" Connected to MongoDB successfully!")
 	return client
 }
 
