@@ -17,9 +17,12 @@ import (
 // ------------------ MAIN ------------------
 
 func main() {
-	//logger using slog to log in json format
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	client := database.ConnectDB()
+	//
+	h := &handlers.Handler{Client: client}
+	//logger using slog to log in json format
+
 	defer func() {
 		if err := client.Disconnect(context.TODO()); err != nil {
 
@@ -31,19 +34,12 @@ func main() {
 	mux := http.NewServeMux()
 
 	//applying method check middleware to the mux handlers
-
-	createUser := middleware.MethodChecker([]string{http.MethodPost}, handlers.CreateUser)
-	mux.Handle("/api/create-user", createUser)
-	updateUser := middleware.MethodChecker([]string{http.MethodPut}, handlers.UpdateUser)
-	mux.Handle("/api/update-user/{id}", updateUser)
-	fetchAllUsers := methodChecker([]string{http.MethodGet}, http.HandlerFunc(fetchAllUsers))
-	mux.Handle("/api/users", fetchAllUsers)
-	deleteUser := methodChecker([]string{http.MethodDelete}, http.HandlerFunc(deleteUser))
-	mux.Handle("/api/delete-user/{id}", deleteUser)
-	updateStatus := methodChecker([]string{http.MethodPut}, http.HandlerFunc(updateStatus))
-	mux.Handle("/api/update-Status/", updateStatus)
-	fetchAllEmails := methodChecker([]string{http.MethodGet}, http.HandlerFunc(fetchAllEmails))
-	mux.Handle("/api/emails", fetchAllEmails)
+	mux.Handle("/api/create-user", middleware.MethodChecker([]string{http.MethodPost}, http.HandlerFunc(h.CreateUser)))
+	mux.Handle("/api/update-user/{id}", middleware.MethodChecker([]string{http.MethodPut}, http.HandlerFunc(h.UpdateUser)))
+	mux.Handle("/api/users", middleware.MethodChecker([]string{http.MethodGet}, http.HandlerFunc(h.FetchAllUsers)))
+	mux.Handle("/api/delete-user/{id}", middleware.MethodChecker([]string{http.MethodDelete}, http.HandlerFunc(h.DeleteUser)))
+	mux.Handle("/api/update-status/{id}", middleware.MethodChecker([]string{http.MethodPut}, http.HandlerFunc(h.UpdateStatus)))
+	mux.Handle("/api/emails", middleware.MethodChecker([]string{http.MethodGet}, http.HandlerFunc(h.FetchAllEmails)))
 
 	//Wrapping the mux around the panic middleware
 

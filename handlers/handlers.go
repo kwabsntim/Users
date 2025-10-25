@@ -16,9 +16,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var client *mongo.Client
+type Handler struct {
+	Client *mongo.Client
+}
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -39,7 +41,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	user.CreatedAt = time.Now()
 	user.Status = "active"
 
-	collection := client.Database("usersdb").Collection("users")
+	collection := h.Client.Database("usersdb").Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -65,7 +67,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // ------------------ UPDATE USER ------------------
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	userIDStr := r.PathValue("id")
 	if userIDStr == "" {
@@ -88,7 +90,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	collection := client.Database("usersdb").Collection("users")
+	collection := h.Client.Database("usersdb").Collection("users")
 	if userUpdateData.Email != "" {
 		filter := bson.M{"email": userUpdateData.Email,
 			"_id": bson.M{"$ne": objID},
@@ -143,10 +145,10 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // --------------FETCH ALL  USERS ------------------
-func FetchAllUsers(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	//connecting to the mongo db collection
-	collection := client.Database("usersdb").Collection("users")
+	collection := h.Client.Database("usersdb").Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -176,10 +178,10 @@ func FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // -----------------FETCH ALL EMAILS-----------------
-func FetchAllEmails(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FetchAllEmails(w http.ResponseWriter, r *http.Request) {
 
 	//getting the collection'
-	collection := client.Database("usersdb").Collection("users")
+	collection := h.Client.Database("usersdb").Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -213,7 +215,7 @@ func FetchAllEmails(w http.ResponseWriter, r *http.Request) {
 }
 
 // --------------DELETE USER ------------------
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	userIDStr := r.PathValue("id")
 	if userIDStr == "" {
@@ -225,7 +227,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid user ID ", http.StatusBadRequest)
 		return
 	}
-	collection := client.Database("usersdb").Collection("users")
+	collection := h.Client.Database("usersdb").Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -247,7 +249,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // ------UPDATE STATUS---------------------
-func UpdateStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	userIDStr := r.PathValue("id")
 	if userIDStr == "" {
@@ -276,7 +278,7 @@ func UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		"status": user.Status,
 	}}
 
-	collection := client.Database("usersdb").Collection("users")
+	collection := h.Client.Database("usersdb").Collection("users")
 	result, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		http.Error(w, "Error updating user status ", http.StatusInternalServerError)
