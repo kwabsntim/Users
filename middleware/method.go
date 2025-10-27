@@ -1,6 +1,6 @@
-// method middleware
 package middleware
 
+// method middleware
 import (
 	"net/http"
 )
@@ -18,6 +18,7 @@ func MethodChecker(allowedMethods []string, next http.Handler) http.Handler {
 		}
 		if !methodAllowed {
 			http.Error(w, "Invalid Method", http.StatusMethodNotAllowed)
+			return
 		}
 		next.ServeHTTP(w, r)
 	})

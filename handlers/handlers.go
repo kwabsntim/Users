@@ -208,6 +208,7 @@ func (h *Handler) FetchAllEmails(w http.ResponseWriter, r *http.Request) {
 
 	if err = results.All(ctx, &emails); err != nil {
 		http.Error(w, "Error fetching emails", http.StatusInternalServerError)
+		return
 	}
 	defer results.Close(ctx)
 	w.Header().Set("content-type", "application/json")
