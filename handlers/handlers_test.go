@@ -8,9 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
+// testing successful creation of user
 func TestCreateUser(t *testing.T) {
 	// Setup mock MongoDB
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
@@ -49,6 +51,8 @@ func TestCreateUser(t *testing.T) {
 		}
 	})
 }
+
+// testing invalid email
 func TestCreateUser_InvalidEmail(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	mt.Run("invalid email", func(mtT *mtest.T) {
@@ -64,11 +68,13 @@ func TestCreateUser_InvalidEmail(t *testing.T) {
 		}
 	})
 }
+
+// checking if a user exits test
 func TestCreateUser_UserExits(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	mt.Run("User exists", func(mtT *mtest.T) {
 		mtT.AddMockResponses(
-			mtest.CreateCursorResponse(1, "usersdb.users", mtest.FirstBatch),bson.M{"email":"xxx@mail.com"}),
+			mtest.CreateCursorResponse(1, "usersdb.users", mtest.FirstBatch, bson.D{{Key: "email", Value: "fakeemail@mail.com"}}),
 		)
 		payload := `{"username":"FakeUser","email":"fakeemail@mail.com"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/create-user", bytes.NewBufferString(payload))
@@ -82,4 +88,52 @@ func TestCreateUser_UserExits(t *testing.T) {
 		}
 	})
 
+}
+
+// testing successful update of user
+func TestUpdateUser(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	mt.Run("success", func(mtT *mtest.T) {
+		mtT.AddMockResponses(
+			//Every success test must return 0 or output zero remember!!
+			mtest.CreateCursorResponse(0, "usersdb.users", mtest.FirstBatch), // No duplicate email
+			mtest.CreateSuccessResponse(bson.E{Key: "n", Value: 1}),          // UpdateOne matches 1 document
+		)
+		payload := `{"username":"Newname","email":"new@mail.com","password":"newpass123"}`
+		req := httptest.NewRequest(http.MethodPut, "/api/update-user/507f1f77bcf86cd799439011", bytes.NewBufferString(payload))
+		rec := httptest.NewRecorder()
+		h := &Handler{
+			Client: mtT.Client,
+		}
+		mux := http.NewServeMux()
+		mux.HandleFunc("PUT /api/update-user/{id}", h.UpdateUser)
+
+		// Use the mux instead of calling handler directly
+		mux.ServeHTTP(rec, req)
+		t.Logf("Status: %d, Body: %s", rec.Code, rec.Body.String())
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("Expected 200 but got %d", rec.Code)
+		}
+	})
+
+}
+func TestUpdateUser_InavlidID(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	mt.Run("Invalid_ID", func(mtT *mtest.T) {
+		payload := `{"invalid-email-address":"invalid"}`
+		req := httptest.NewRequest(http.MethodPut, "/api/update-user/invalid-id", bytes.NewBufferString(payload))
+		rec := httptest.NewRecorder()
+		h := &Handler{
+			Client: mtT.Client,
+		}
+		// Add ServeMux to make PathValue work
+		mux := http.NewServeMux()
+		mux.HandleFunc("PUT /api/update-user/{id}", h.UpdateUser)
+		mux.ServeHTTP(rec, req)
+		h.UpdateUser(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("expected 200 but got %d", rec.Code)
+		}
+	})
 }
