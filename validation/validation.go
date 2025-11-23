@@ -1,11 +1,11 @@
 package validation
 
-
-import(
-    "errors"
-    "net/mail"
-    "regexp"
+import (
+	"errors"
+	"net/mail"
+	"regexp"
 )
+
 // Pre-compile regex patterns for better performance
 var (
 	upperRegex    = regexp.MustCompile(`[A-Z]`)
@@ -13,13 +13,14 @@ var (
 	numberRegex   = regexp.MustCompile(`[0-9]`)
 	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 )
-func validateEmail(email string)error{
-    if email == "" {
-		return errors.New("Email cannot be empty")
+
+func ValidateEmail(email string) error {
+	if email == "" {
+		return errors.New("email cannot be empty")
 	}
 	//parsing the email
 	if _, err := mail.ParseAddress(email); err != nil {
-		return errors.New("Invalid email format")
+		return errors.New("invalid email format")
 	}
 
 	return nil
@@ -31,6 +32,7 @@ func ValidatePassword(password string) error {
 	}
 	return nil
 }
+
 // validate username
 func ValidateUsername(username string) error {
 	if username == "" {
